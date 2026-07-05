@@ -126,11 +126,8 @@ export default function App() {
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-bold tracking-tight text-white font-sans group-hover:text-nature-lime transition-colors">
+              <span className="text-xl font-extrabold tracking-tight text-white font-sans group-hover:text-nature-lime transition-colors">
                 {siteConfig.name}
-              </span>
-              <span className="text-[10px] font-mono text-nature-emerald font-semibold uppercase tracking-wider">
-                {siteConfig.theme}
               </span>
             </div>
           </a>

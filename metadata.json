@@ -1,0 +1,6 @@
+{
+  "name": "QIE SMP",
+  "description": "Landing Page Informasi Resmi Minecraft Server QIE SMP - Survival Economy Bedrock",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

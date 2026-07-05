@@ -1,0 +1,16 @@
+{
+  "name": "QIE SMP",
+  "short_name": "QIE SMP",
+  "description": "Landing Page Informasi Resmi Minecraft Server QIE SMP - Survival Economy Bedrock",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1c12",
+  "theme_color": "#22c55e",
+  "icons": [
+    {
+      "src": "/src/assets/images/qie_smp_logo_1783275165530.jpg",
+      "sizes": "192xl92",
+      "type": "image/jpg"
+    }
+  ]
+}

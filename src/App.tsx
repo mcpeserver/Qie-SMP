@@ -22,7 +22,9 @@ import {
   AlertCircle,
   Wrench,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Menu,
+  X
 } from "lucide-react";
 
 import { siteConfig } from "./config/site";
@@ -37,7 +39,13 @@ export default function App() {
   const [copiedPort, setCopiedPort] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Developer state with fallback from siteConfig
+  // SPA navigation active page state
+  const [activeTab, setActiveTab] = useState<"home" | "rules" | "shop" | "community">("home");
+  
+  // Mobile drawer hamburger state
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Developer state with fallback from siteConfig (initially zero hardcoding, dynamic placeholder)
   const [devData, setDevData] = useState({
     name: siteConfig.developer.name,
     phone: siteConfig.purchase.whatsappDisplay,
@@ -50,6 +58,16 @@ export default function App() {
 
   // Fetch remote developer configuration from raw GitHub config
   useEffect(() => {
+    // Set initial local favicon and og-image instantly on mount as requested
+    const initialFavicon = document.querySelector("link[rel='icon']") as HTMLLinkElement;
+    if (initialFavicon) {
+      initialFavicon.href = logoImg;
+    }
+    const initialOg = document.querySelector("meta[property='og:image']") as HTMLMetaElement;
+    if (initialOg) {
+      initialOg.content = heroBgImg;
+    }
+
     fetch("https://raw.githubusercontent.com/mcpeserver/MyAPI/main/config.json")
       .then((res) => {
         if (!res.ok) throw new Error("Gagal mengambil data developer.");
@@ -66,6 +84,51 @@ export default function App() {
             communityWebsite: data.community?.website || "https://sfl.gl/x2ic",
             communityDiscord: data.community?.discord || "https://discord.gg/qiesmp"
           });
+
+          // 2. Dynamic SEO, Favicon, and Open Graph (OG) Tags implementation
+          // Set Favicon from JSON data (if data.logo exists) or fall back to user's local logo asset
+          const logoUrl = data.logo || data.website?.logo || data.community?.logo || logoImg;
+          if (logoUrl) {
+            let faviconLink = document.querySelector("link[rel='icon']") as HTMLLinkElement;
+            if (!faviconLink) {
+              faviconLink = document.createElement("link");
+              faviconLink.rel = "icon";
+              document.head.appendChild(faviconLink);
+            }
+            faviconLink.href = logoUrl;
+          }
+
+          // Set OG Image from hero image in JSON or fall back to user's local hero asset
+          const heroUrl = data.hero_image || data.website?.hero_image || data.website?.portfolio_thumbnail || heroBgImg;
+          if (heroUrl) {
+            let ogImg = document.querySelector("meta[property='og:image']") as HTMLMetaElement;
+            if (!ogImg) {
+              ogImg = document.createElement("meta");
+              ogImg.setAttribute("property", "og:image");
+              document.head.appendChild(ogImg);
+            }
+            ogImg.content = heroUrl;
+          }
+
+          // Update OG Title & Description
+          const pageTitle = `${siteConfig.name} - Minecraft Server Bedrock`;
+          document.title = pageTitle;
+
+          let ogTitle = document.querySelector("meta[property='og:title']") as HTMLMetaElement;
+          if (!ogTitle) {
+            ogTitle = document.createElement("meta");
+            ogTitle.setAttribute("property", "og:title");
+            document.head.appendChild(ogTitle);
+          }
+          ogTitle.content = pageTitle;
+
+          let ogDesc = document.querySelector("meta[property='og:description']") as HTMLMetaElement;
+          if (!ogDesc) {
+            ogDesc = document.createElement("meta");
+            ogDesc.setAttribute("property", "og:description");
+            document.head.appendChild(ogDesc);
+          }
+          ogDesc.content = `Website resmi ${siteConfig.name} yang dikembangkan secara profesional oleh ${data.name || "RAN DEV"}. Ayo bermain bersama kami!`;
         }
       })
       .catch((err) => {
@@ -104,12 +167,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-stone-dark text-stone-light selection:bg-nature-emerald selection:text-forest-dark relative">
       
-      {/* 1. DEVELOPER WATERMARK BANNER */}
+      {/* 1. DEVELOPER WATERMARK BANNER (Hidden on Mobile, Clean & Elegant on Desktop) */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full bg-[#0a1e12] border-b border-forest-light/40 py-2 px-4 text-xs z-50 sticky top-0 backdrop-blur-md shadow-md"
+        className="hidden md:block w-full bg-[#0a1e12] border-b border-forest-light/40 py-2 px-4 text-xs z-50 sticky top-0 backdrop-blur-md shadow-md"
       >
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-stone-300 font-mono text-center md:text-left">
@@ -126,7 +189,7 @@ export default function App() {
             </a>
           </div>
           
-          {/* Custom links to view other servers and join community */}
+          {/* Custom links to view other servers and join community (Desktop only) */}
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-2.5">
             <span className="text-[11px] text-stone-400 lg:inline hidden">Tertarik membuat website server?</span>
             <a 
@@ -163,18 +226,18 @@ export default function App() {
         </div>
       </motion.div>
 
-      {/* 2. STICKY HEADER / NAVBAR */}
+      {/* 2. STICKY HEADER / NAVBAR with shrinking Down Scroll effect */}
       <header 
         className={`w-full z-40 transition-all duration-300 ${
           scrolled 
-            ? "sticky top-[42px] sm:top-[37px] bg-forest-dark/90 backdrop-blur-xl border-b border-forest-light/40 py-3 shadow-lg" 
-            : "sticky top-[42px] sm:top-[37px] bg-forest-dark/50 backdrop-blur-md py-5"
+            ? "sticky top-0 md:top-[37px] bg-forest-dark/95 backdrop-blur-xl border-b border-forest-light/40 py-2.5 shadow-lg" 
+            : "sticky top-0 md:top-[37px] bg-forest-dark/50 backdrop-blur-md py-4 md:py-5"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-8 flex justify-between items-center">
           {/* Logo & Brand */}
-          <a href="#" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl overflow-hidden border border-forest-light/60 bg-forest-medium flex items-center justify-center p-0.5 group-hover:border-nature-emerald transition-colors duration-300">
+          <button onClick={() => { setActiveTab("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="flex items-center gap-3 group">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl overflow-hidden border border-forest-light/60 bg-forest-medium flex items-center justify-center p-0.5 group-hover:border-nature-emerald transition-colors duration-300">
               <img 
                 src={logoImg} 
                 alt="QIE SMP Logo" 
@@ -182,47 +245,230 @@ export default function App() {
                 referrerPolicy="no-referrer"
               />
             </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-extrabold tracking-tight text-white font-sans group-hover:text-nature-lime transition-colors">
+            <div className="flex flex-col text-left">
+              <span className="text-lg md:text-xl font-extrabold tracking-tight text-white font-sans group-hover:text-nature-lime transition-colors">
                 {siteConfig.name}
               </span>
             </div>
-          </a>
+          </button>
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1.5 bg-forest-medium/30 p-1.5 rounded-full border border-forest-light/20">
-            <a href="#koneksi" className="text-sm font-medium text-stone-300 hover:text-white hover:bg-forest-light/30 px-4 py-1.5 rounded-full transition-all">
-              Koneksi
-            </a>
-            <a href="#peraturan" className="text-sm font-medium text-stone-300 hover:text-white hover:bg-forest-light/30 px-4 py-1.5 rounded-full transition-all">
+            <button 
+              onClick={() => { setActiveTab("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              className={`text-xs md:text-sm font-medium px-4 py-1.5 rounded-full transition-all ${
+                activeTab === "home" 
+                  ? "bg-nature-emerald text-stone-950 font-bold shadow-md shadow-nature-emerald/10" 
+                  : "text-stone-300 hover:text-white hover:bg-forest-light/20"
+              }`}
+            >
+              Koneksi & Lobby
+            </button>
+            <button 
+              onClick={() => { setActiveTab("rules"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              className={`text-xs md:text-sm font-medium px-4 py-1.5 rounded-full transition-all ${
+                activeTab === "rules" 
+                  ? "bg-nature-emerald text-stone-950 font-bold shadow-md shadow-nature-emerald/10" 
+                  : "text-stone-300 hover:text-white hover:bg-forest-light/20"
+              }`}
+            >
               Peraturan
-            </a>
-            <a href="#rank" className="text-sm font-medium text-stone-300 hover:text-white hover:bg-forest-light/30 px-4 py-1.5 rounded-full transition-all">
-              Rank Server
-            </a>
-            <a href="#money" className="text-sm font-medium text-stone-300 hover:text-white hover:bg-forest-light/30 px-4 py-1.5 rounded-full transition-all">
-              Sistem Ekonomi
-            </a>
-            <a href="#komunitas" className="text-sm font-medium text-stone-300 hover:text-white hover:bg-forest-light/30 px-4 py-1.5 rounded-full transition-all">
+            </button>
+            <button 
+              onClick={() => { setActiveTab("shop"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              className={`text-xs md:text-sm font-medium px-4 py-1.5 rounded-full transition-all ${
+                activeTab === "shop" 
+                  ? "bg-nature-emerald text-stone-950 font-bold shadow-md shadow-nature-emerald/10" 
+                  : "text-stone-300 hover:text-white hover:bg-forest-light/20"
+              }`}
+            >
+              Rank & Ekonomi
+            </button>
+            <button 
+              onClick={() => { setActiveTab("community"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              className={`text-xs md:text-sm font-medium px-4 py-1.5 rounded-full transition-all ${
+                activeTab === "community" 
+                  ? "bg-nature-emerald text-stone-950 font-bold shadow-md shadow-nature-emerald/10" 
+                  : "text-stone-300 hover:text-white hover:bg-forest-light/20"
+              }`}
+            >
               Komunitas
-            </a>
+            </button>
           </nav>
 
-          {/* Quick Action Button */}
-          <div className="flex items-center gap-3">
-            <a 
-              href="#koneksi" 
-              className="bg-forest-medium hover:bg-forest-light text-nature-lime border border-nature-emerald/30 font-bold px-4 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5"
+          {/* Right actions (Desktop and Mobile) */}
+          <div className="flex items-center gap-2.5">
+            <button 
+              onClick={() => { setActiveTab("home"); window.scrollTo({ top: 500, behavior: "smooth" }); }}
+              className="hidden sm:flex bg-forest-medium hover:bg-forest-light text-nature-lime border border-nature-emerald/30 font-bold px-4 py-2 rounded-xl text-xs transition-all items-center gap-1.5 active:scale-95"
             >
               <Server className="w-3.5 h-3.5" />
               <span>Main Sekarang</span>
-            </a>
+            </button>
+
+            {/* Mobile Hamburger menu */}
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden p-2 rounded-xl bg-forest-medium/30 border border-forest-light/40 text-stone-200 hover:text-white transition-all hover:bg-forest-medium/50 active:scale-95"
+              aria-label="Menu Navigasi"
+            >
+              {isMenuOpen ? <X className="w-5.5 h-5.5" /> : <Menu className="w-5.5 h-5.5" />}
+            </button>
           </div>
         </div>
       </header>
 
-      {/* 3. HERO SECTION */}
-      <section className="relative min-h-[85vh] flex items-center justify-center py-20 px-4 overflow-hidden border-b border-forest-light/20">
+      {/* Mobile Navigation Drawer (Responsive Developer Panel) */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.6 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="fixed inset-0 bg-stone-dark/90 z-40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-[80%] max-w-[360px] bg-[#07140b] border-l border-forest-light/30 shadow-2xl z-50 p-6 flex flex-col justify-between overflow-y-auto"
+            >
+              <div>
+                <div className="flex justify-between items-center mb-8 pb-4 border-b border-forest-light/20">
+                  <div className="flex items-center gap-2">
+                    <img src={logoImg} alt="Logo" className="w-6 h-6 rounded-md object-cover" />
+                    <span className="text-base font-black tracking-tight text-white">{siteConfig.name}</span>
+                  </div>
+                  <button 
+                    onClick={() => setIsMenuOpen(false)}
+                    className="p-1.5 rounded-lg bg-forest-medium/40 border border-forest-light/30 text-stone-300 hover:text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Mobile Drawer Navigation Links */}
+                <div className="flex flex-col gap-2.5">
+                  <button 
+                    onClick={() => { setActiveTab("home"); setIsMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left font-sans font-medium transition-all ${
+                      activeTab === "home" 
+                        ? "bg-nature-emerald text-stone-950 font-bold shadow-md shadow-nature-emerald/10" 
+                        : "text-stone-300 hover:bg-forest-medium/20"
+                    }`}
+                  >
+                    <Server className="w-4 h-4" />
+                    <span>Lobby & Koneksi</span>
+                  </button>
+                  <button 
+                    onClick={() => { setActiveTab("rules"); setIsMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left font-sans font-medium transition-all ${
+                      activeTab === "rules" 
+                        ? "bg-nature-emerald text-stone-950 font-bold shadow-md shadow-nature-emerald/10" 
+                        : "text-stone-300 hover:bg-forest-medium/20"
+                    }`}
+                  >
+                    <ShieldAlert className="w-4 h-4" />
+                    <span>Peraturan Server</span>
+                  </button>
+                  <button 
+                    onClick={() => { setActiveTab("shop"); setIsMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left font-sans font-medium transition-all ${
+                      activeTab === "shop" 
+                        ? "bg-nature-emerald text-stone-950 font-bold shadow-md shadow-nature-emerald/10" 
+                        : "text-stone-300 hover:bg-forest-medium/20"
+                    }`}
+                  >
+                    <Award className="w-4 h-4" />
+                    <span>Rank & Ekonomi</span>
+                  </button>
+                  <button 
+                    onClick={() => { setActiveTab("community"); setIsMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left font-sans font-medium transition-all ${
+                      activeTab === "community" 
+                        ? "bg-nature-emerald text-stone-950 font-bold shadow-md shadow-nature-emerald/10" 
+                        : "text-stone-300 hover:bg-forest-medium/20"
+                    }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Komunitas</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Developer & Community Panel inside Navigation Drawer */}
+              <div className="mt-8 pt-6 border-t border-forest-light/20 space-y-4">
+                <div className="bg-forest-medium/20 p-4 rounded-2xl border border-forest-light/20">
+                  <span className="text-[10px] font-mono text-stone-400 block uppercase mb-1">DEVELOPER INFO</span>
+                  <p className="text-stone-200 text-sm font-semibold mb-3">{devData.name}</p>
+                  
+                  <div className="space-y-2.5">
+                    <a 
+                      href={`https://wa.me/${devData.whatsapp}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs font-medium text-nature-lime bg-[#25D366]/10 border border-[#25D366]/20 py-2.5 px-3 rounded-xl hover:bg-[#25D366]/20 transition-colors w-full justify-center"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-[#25D366]" />
+                      <span>Chat WhatsApp ({devData.phone})</span>
+                    </a>
+
+                    <a 
+                      href={devData.portfolio}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs font-medium text-stone-200 bg-forest-medium/40 border border-forest-light/30 py-2.5 px-3 rounded-xl hover:bg-forest-medium/60 transition-colors w-full justify-center"
+                    >
+                      <Globe className="w-3.5 h-3.5 text-gold-bright" />
+                      <span>Lihat Server Lain 🌐</span>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="bg-forest-medium/20 p-4 rounded-2xl border border-forest-light/20">
+                  <span className="text-[10px] font-mono text-stone-400 block uppercase mb-1">DEV COMMUNITY</span>
+                  <p className="text-stone-200 text-xs font-medium mb-3">{devData.communityName}</p>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <a 
+                      href={devData.communityWebsite}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1 text-[10px] font-medium text-stone-300 hover:text-white bg-forest-medium/40 border border-forest-light/20 py-2 rounded-xl hover:bg-forest-medium/60 transition-colors"
+                    >
+                      <Users className="w-3 h-3 text-nature-emerald" />
+                      <span>Web Komunitas</span>
+                    </a>
+                    <a 
+                      href={devData.communityDiscord}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1 text-[10px] font-medium text-white bg-[#5865F2]/10 border border-[#5865F2]/20 py-2 rounded-xl hover:bg-[#5865F2]/20 transition-colors"
+                    >
+                      <Globe className="w-3 h-3 text-[#5865F2]" />
+                      <span>Discord Dev</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* 3. HERO SECTION & 4. STATUS SERVER (Conditional Home Tab with Transition) */}
+      {activeTab === "home" && (
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="w-full"
+        >
+          {/* 3. HERO SECTION */}
+          <section className="relative min-h-[85vh] flex items-center justify-center py-20 px-4 overflow-hidden border-b border-forest-light/20">
         
         {/* Cinematic Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
@@ -316,14 +562,14 @@ export default function App() {
               <span>{copiedIP ? "Tersalin!" : "Salin IP Server"}</span>
             </button>
             
-            <a 
-              href="#komunitas"
-              className="w-full sm:w-auto bg-forest-medium/80 hover:bg-forest-light text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 border border-forest-light/40 flex items-center justify-center gap-2 scale-100 hover:scale-[1.03] active:scale-95 text-base"
+            <button 
+              onClick={() => { setActiveTab("community"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              className="w-full sm:w-auto bg-forest-medium/80 hover:bg-forest-light text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 border border-forest-light/40 flex items-center justify-center gap-2 scale-100 hover:scale-[1.03] active:scale-95 text-base cursor-pointer"
             >
               <Users className="w-5 h-5 text-nature-lime" />
               <span>Gabung Komunitas</span>
               <ArrowRight className="w-4 h-4 text-stone-400 group-hover:translate-x-1 transition-transform" />
-            </a>
+            </button>
           </motion.div>
           
         </div>
@@ -478,9 +724,18 @@ export default function App() {
 
         </div>
       </section>
+        </motion.div>
+      )}
 
       {/* 5. PERATURAN SERVER (SERVER RULES) */}
-      <section id="peraturan" className="py-24 bg-forest-dark/40 border-y border-forest-light/20 relative">
+      {activeTab === "rules" && (
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="w-full"
+        >
+          <section id="peraturan" className="py-24 bg-forest-dark/40 border-y border-forest-light/20 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-forest-dark/50 to-transparent"></div>
         <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
           
@@ -536,9 +791,18 @@ export default function App() {
 
         </div>
       </section>
+        </motion.div>
+      )}
 
-      {/* 6. RANK SERVER & STORE SECTION */}
-      <section id="rank" className="py-24 max-w-7xl mx-auto px-4 md:px-8 relative">
+      {/* 6. RANK SERVER & STORE SECTION & 7. MONEY SYSTEM (Shop Tab with Transition) */}
+      {activeTab === "shop" && (
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="w-full"
+        >
+          <section id="rank" className="py-24 max-w-7xl mx-auto px-4 md:px-8 relative">
         <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-gold-coin/5 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="text-center mb-16">
@@ -681,9 +945,18 @@ export default function App() {
         </div>
 
       </section>
+        </motion.div>
+      )}
 
       {/* 8. KOMUNITAS SECTION */}
-      <section id="komunitas" className="py-24 bg-[#081810] border-t border-forest-light/20 relative">
+      {activeTab === "community" && (
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="w-full"
+        >
+          <section id="komunitas" className="py-24 bg-[#081810] border-t border-forest-light/20 relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-nature-emerald/5 rounded-full blur-[100px] pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10 text-center">
@@ -787,6 +1060,8 @@ export default function App() {
 
         </div>
       </section>
+        </motion.div>
+      )}
 
       {/* 9. FOOTER */}
       <footer className="bg-forest-dark border-t border-forest-light/30 text-stone-400 text-sm py-16 px-4 relative z-10">
@@ -812,21 +1087,36 @@ export default function App() {
             </div>
 
             <div className="md:col-span-7 flex flex-wrap justify-start md:justify-end gap-x-8 gap-y-4">
-              <a href="#koneksi" className="text-xs font-semibold text-stone-300 hover:text-white transition-colors">
+              <button 
+                onClick={() => { setActiveTab("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                className="text-xs font-semibold text-stone-300 hover:text-white transition-colors cursor-pointer"
+              >
                 Koneksi & Status
-              </a>
-              <a href="#peraturan" className="text-xs font-semibold text-stone-300 hover:text-white transition-colors">
+              </button>
+              <button 
+                onClick={() => { setActiveTab("rules"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                className="text-xs font-semibold text-stone-300 hover:text-white transition-colors cursor-pointer"
+              >
                 Peraturan
-              </a>
-              <a href="#rank" className="text-xs font-semibold text-stone-300 hover:text-white transition-colors">
+              </button>
+              <button 
+                onClick={() => { setActiveTab("shop"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                className="text-xs font-semibold text-stone-300 hover:text-white transition-colors cursor-pointer"
+              >
                 Rank Server
-              </a>
-              <a href="#money" className="text-xs font-semibold text-stone-300 hover:text-white transition-colors">
+              </button>
+              <button 
+                onClick={() => { setActiveTab("shop"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                className="text-xs font-semibold text-stone-300 hover:text-white transition-colors cursor-pointer"
+              >
                 Sistem Ekonomi
-              </a>
-              <a href="#komunitas" className="text-xs font-semibold text-stone-300 hover:text-white transition-colors">
+              </button>
+              <button 
+                onClick={() => { setActiveTab("community"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                className="text-xs font-semibold text-stone-300 hover:text-white transition-colors cursor-pointer"
+              >
                 Komunitas
-              </a>
+              </button>
             </div>
 
           </div>
